@@ -261,48 +261,93 @@ app.get("/b2bSC_getCatagories/v2", auth, (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// RAISE TICKET
-// Spec: POST /b2bSC_raiseTicket/v1
-// Required: msisdn, ticketType, service, category, subCat,
-//           title, summary, subCatName, callBackNumber
-// msisdn resolves contractId internally.
-// ticketNo auto-generated and linked to customer.ticket_ids[].
+// RAISE TICKET — MINIMAL REQUIRED INPUTS
+// Required: msisdn, summary
+// Optional enrichment fields accepted dynamically
 // ═══════════════════════════════════════════════════════════════
+
 app.post("/b2bSC_raiseTicket/v1", auth, (req, res) => {
-  const { msisdn, ticketType, service, category, subCat, title, summary, subCatName, callBackNumber, supportDocsList } = req.body;
 
-  const missing = ["msisdn","ticketType","service","category","subCat","title","summary","subCatName","callBackNumber"]
-    .filter(f => !req.body[f]);
-  if (missing.length)
-    return res.status(400).json({ statusCode: "1", stausMessage: `Missing required fields: ${missing.join(", ")}` });
+  const {
+    msisdn,
+    summary,
 
+    // optional fields
+    ticketType,
+    service,
+    category,
+    subCat,
+    subCatName,
+    title,
+    callBackNumber,
+    priority,
+    supportDocsList
+  } = req.body;
+
+  // Minimal validation
+  if (!msisdn || !summary) {
+    return res.status(400).json({
+      statusCode: "1",
+      statusMessage: "msisdn and summary are required"
+    });
+  }
+
+  // Customer lookup
   const customer = db.findCustomer(msisdn);
-  if (!customer)
-    return res.status(404).json({ statusCode: "1", stausMessage: `No customer found for msisdn ${msisdn}` });
+
+  if (!customer) {
+    return res.status(404).json({
+      statusCode: "1",
+      statusMessage: `No customer found for msisdn ${msisdn}`
+    });
+  }
 
   const ticketNo = db.newTicketNo();
-  const now      = new Date().toISOString();
+  const now = new Date().toISOString();
 
-  db.saveTicket({
-    ticketNo, ticketType, service, category, subCat, subCatName, title, summary,
-    priority:      "High",
-    status:        "Open",
-    msisdn:        customer.msisdn,
-    contractId:    customer.id,
-    callBackNumber,
-    description:   `title=${title}| type=${ticketType}| service=${service}| category=${category}| subCategoryName=${subCatName}| summary=${summary}`,
-    note:          [],
-    attachment:    supportDocsList || [],
-    createdDate:   now,
-    modifiedDate:  now,
-  });
+  const ticket = {
+    ticketNo,
+
+    msisdn: customer.msisdn,
+    contractId: customer.id,
+
+    summary,
+
+    // optional enrichments
+    ticketType: ticketType || "General",
+    service: service || "",
+    category: category || "",
+    subCat: subCat || "",
+    subCatName: subCatName || "",
+    title: title || "Customer Support Request",
+
+    priority: priority || "Medium",
+
+    callBackNumber: callBackNumber || customer.msisdn,
+
+    status: "Open",
+
+    description: summary,
+
+    note: [],
+    attachment: supportDocsList || [],
+
+    createdDate: now,
+    modifiedDate: now
+  };
+
+  db.saveTicket(ticket);
 
   customer.ticket_ids.push(ticketNo);
   db.saveCustomer(customer);
 
-  res.status(201).json({ statusCode: "0", stausMessage: "success", ticketNumber: ticketNo });
+  return res.status(201).json({
+    statusCode: "0",
+    statusMessage: "success",
+    ticketNumber: ticketNo,
+    ticket
+  });
 });
-
 // ═══════════════════════════════════════════════════════════════
 // TICKET CRUD
 // Ownership verified by msisdn on every operation.
