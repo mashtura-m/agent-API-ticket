@@ -1,0 +1,144 @@
+{
+  "type": [
+    {
+      "label": "Complaint",
+      "service": [
+        {
+          "label": "Fixed",
+          "name": "Fixed",
+          "category": [
+            {
+              "label": "Network Issue",
+              "id": "",
+              "subCategory": [
+                {
+                  "id": "TC0110211613",
+                  "label": "Reachability",
+                  "msidn": "Y"
+                },
+                {
+                  "id": "TC0110211614",
+                  "label": "Slow Speed",
+                  "msidn": "Y"
+                },
+                {
+                  "id": "TC0110211615",
+                  "label": "Intermittent Drop",
+                  "msidn": "Y"
+                }
+              ]
+            },
+            {
+              "label": "Service Outage",
+              "id": "",
+              "subCategory": [
+                {
+                  "id": "TC0110311701",
+                  "label": "Complete Outage",
+                  "msidn": "Y"
+                },
+                {
+                  "id": "TC0110311702",
+                  "label": "Partial Outage",
+                  "msidn": "Y"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Mobility",
+          "name": "Mobility",
+          "category": [
+            {
+              "label": "Billing",
+              "id": "",
+              "subCategory": [
+                {
+                  "id": "TC0220311001",
+                  "label": "Overcharge",
+                  "msidn": "Y"
+                },
+                {
+                  "id": "TC0220311002",
+                  "label": "Wrong Deduction",
+                  "msidn": "Y"
+                },
+                {
+                  "id": "TC0220311003",
+                  "label": "Refund Request",
+                  "msidn": "Y"
+                }
+              ]
+            },
+            {
+              "label": "Network Issue",
+              "id": "",
+              "subCategory": [
+                {
+                  "id": "TC0220411613",
+                  "label": "No Signal",
+                  "msidn": "Y"
+                },
+                {
+                  "id": "TC0220411614",
+                  "label": "Call Drop",
+                  "msidn": "Y"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Requests",
+      "service": [
+        {
+          "label": "Fixed",
+          "name": "Fixed",
+          "category": [
+            {
+              "label": "New Connection",
+              "id": "",
+              "subCategory": [
+                {
+                  "id": "TC0330511801",
+                  "label": "Home Broadband",
+                  "msidn": "N"
+                },
+                {
+                  "id": "TC0330511802",
+                  "label": "Corporate Leased",
+                  "msidn": "N"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Mobility",
+          "name": "Mobility",
+          "category": [
+            {
+              "label": "SIM Replacement",
+              "id": "",
+              "subCategory": [
+                {
+                  "id": "TC0330611901",
+                  "label": "Lost SIM",
+                  "msidn": "Y"
+                },
+                {
+                  "id": "TC0330611902",
+                  "label": "Damaged SIM",
+                  "msidn": "Y"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
