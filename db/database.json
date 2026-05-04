@@ -1,0 +1,112 @@
+{
+  "customers": [
+    {
+      "id": "cust-a1b2c3",
+      "customer_name": "Rahim Uddin",
+      "msisdn": "01711234567",
+      "package_name": "Go 12",
+      "package_type": "prepaid",
+      "data_quota_mb": 30720,
+      "validity_days": 30,
+      "current_balance": 320,
+      "ticket_ids": ["TT654321"],
+      "createdAt": "2026-05-01T10:00:00Z"
+    },
+    {
+      "id": "cust-d4e5f6",
+      "customer_name": "Karim Hassan",
+      "msisdn": "01999887766",
+      "package_name": "Postpaid 500",
+      "package_type": "postpaid",
+      "data_quota_mb": 51200,
+      "validity_days": 30,
+      "current_balance": -120,
+      "ticket_ids": ["TT123456", "TT789012"],
+      "createdAt": "2026-04-28T09:20:00Z"
+    },
+    {
+      "id": "cust-g7h8i9",
+      "customer_name": "Nusrat Jahan",
+      "msisdn": "01812345678",
+      "package_name": "Super 20",
+      "package_type": "prepaid",
+      "data_quota_mb": 20480,
+      "validity_days": 28,
+      "current_balance": 150,
+      "ticket_ids": [],
+      "createdAt": "2026-05-02T14:10:00Z"
+    }
+  ],
+  "tickets": [
+    {
+      "ticketNo": "TT654321",
+      "summary": "Call drops frequently in Dhanmondi",
+      "status": "Open",
+      "priority": "High",
+      "msisdn": "01711234567",
+      "contractId": "cust-a1b2c3",
+      "notes": [],
+      "createdDate": "2026-05-01T11:00:00Z",
+      "modifiedDate": "2026-05-01T11:00:00Z"
+    },
+    {
+      "ticketNo": "TT123456",
+      "summary": "Billing issue: extra charge",
+      "status": "InProgress",
+      "priority": "Medium",
+      "msisdn": "01999887766",
+      "contractId": "cust-d4e5f6",
+      "notes": [
+        {
+          "text": "Investigating billing logs",
+          "date": "2026-05-02T10:00:00Z"
+        }
+      ],
+      "createdDate": "2026-05-02T09:30:00Z",
+      "modifiedDate": "2026-05-02T10:00:00Z"
+    },
+    {
+      "ticketNo": "TT789012",
+      "summary": "Slow internet speed",
+      "status": "Resolved",
+      "priority": "Low",
+      "msisdn": "01999887766",
+      "contractId": "cust-d4e5f6",
+      "notes": [
+        {
+          "text": "Network optimized",
+          "date": "2026-05-03T12:00:00Z"
+        }
+      ],
+      "createdDate": "2026-05-03T09:00:00Z",
+      "modifiedDate": "2026-05-03T12:00:00Z"
+    }
+  ],
+  "categories": {
+    "type": [
+      {
+        "label": "Complaint",
+        "service": [
+          {
+            "label": "Mobility",
+            "category": [
+              {
+                "label": "Network",
+                "subCategory": [
+                  {
+                    "id": "TC001",
+                    "label": "Slow Internet"
+                  },
+                  {
+                    "id": "TC002",
+                    "label": "Call Drop"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
