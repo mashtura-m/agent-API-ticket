@@ -95,8 +95,8 @@ app.get("/health", (req, res) => {
 app.post("/customers", auth, (req, res) => {
   const { customer_name, msisdn } = req.body;
 
-  if (!customer_name || !isMSISDN(msisdn)) {
-    return res.status(400).json({ error: "Valid customer_name & msisdn required" });
+  if (!customer_name && !isMSISDN(msisdn) && !package_type && !package_name) {
+    return res.status(400).json({ error: "Valid customer_name, package details & msisdn required" });
   }
 
   const db = readDB();
@@ -109,11 +109,11 @@ app.post("/customers", auth, (req, res) => {
     id: genCustId(),
     customer_name,
     msisdn,
-    package_name: "Basic",
-    package_type: "prepaid",
-    data_quota_mb: 1024,
-    validity_days: 30,
-    current_balance: 0,
+    package_name: package_name || "Basic",
+    package_type: package_type || "prepaid",
+    data_quota_mb: data_quota_mb || 1024,
+    validity_days: validity_days || 30,
+    current_balance: current_balance || 0,
     ticket_ids: [],
     createdAt: now()
   };
