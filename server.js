@@ -74,12 +74,27 @@ const SEED_CATEGORIES = {
   ],
 };
 
+// ── Bootstrap: write all DB files on startup ─────────────────
+// All three files are written immediately so they exist before
+// any request arrives. Existing files are never overwritten.
+function initDb() {
+  if (!fs.existsSync(PATHS.customers))
+    fs.writeFileSync(PATHS.customers,  JSON.stringify({ customers:  SEED_CUSTOMERS }, null, 2));
+  if (!fs.existsSync(PATHS.tickets))
+    fs.writeFileSync(PATHS.tickets,    JSON.stringify({ tickets:    SEED_TICKETS   }, null, 2));
+  if (!fs.existsSync(PATHS.categories))
+    fs.writeFileSync(PATHS.categories, JSON.stringify(SEED_CATEGORIES,               null, 2));
+  console.log("💾  DB files ready in", DB_DIR);
+}
+initDb();
+
 // ── Read / write helpers ─────────────────────────────────────
-function readDb(key, seed) {
-  if (!fs.existsSync(PATHS[key])) {
-    fs.writeFileSync(PATHS[key], JSON.stringify({ [key]: seed }, null, 2));
-  }
+function readDb(key) {
   return JSON.parse(fs.readFileSync(PATHS[key], "utf8"))[key];
+}
+
+function readCategories() {
+  return JSON.parse(fs.readFileSync(PATHS.categories, "utf8"));
 }
 
 function writeDb(key, data) {
@@ -88,9 +103,9 @@ function writeDb(key, data) {
 
 // ── DB API ────────────────────────────────────────────────────
 const db = {
-  customers() { return readDb("customers", SEED_CUSTOMERS); },
-  tickets()   { return readDb("tickets",   SEED_TICKETS);   },
-  categories(){ return readDb("categories",[]); },           // categories seeded separately below
+  customers() { return readDb("customers"); },
+  tickets()   { return readDb("tickets");   },
+  categories(){ return readCategories();    },
 
   findCustomer(idOrMsisdn) {
     return this.customers().find(c => c.id === idOrMsisdn || c.msisdn === idOrMsisdn);
@@ -124,10 +139,6 @@ const db = {
   newTicketNo() { return `TT${Math.floor(100000 + Math.random() * 900000)}`; },
 };
 
-// Seed categories file once
-if (!fs.existsSync(PATHS.categories)) {
-  fs.writeFileSync(PATHS.categories, JSON.stringify(SEED_CATEGORIES, null, 2));
-}
 
 // ═══════════════════════════════════════════════════════════════
 // AUTH MIDDLEWARE
