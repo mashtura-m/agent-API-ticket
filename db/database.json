@@ -9,7 +9,9 @@
       "data_quota_mb": 30720,
       "validity_days": 30,
       "current_balance": 320,
-      "ticket_ids": ["TT654321"],
+      "ticket_ids": [
+        "TT654321"
+      ],
       "createdAt": "2026-05-01T10:00:00Z"
     },
     {
@@ -21,7 +23,10 @@
       "data_quota_mb": 51200,
       "validity_days": 30,
       "current_balance": -120,
-      "ticket_ids": ["TT123456", "TT789012"],
+      "ticket_ids": [
+        "TT123456",
+        "TT789012"
+      ],
       "createdAt": "2026-04-28T09:20:00Z"
     },
     {
@@ -35,6 +40,32 @@
       "current_balance": 150,
       "ticket_ids": [],
       "createdAt": "2026-05-02T14:10:00Z"
+    },
+    {
+      "id": "cust-a5c454",
+      "customer_name": "Sadia Rahman",
+      "msisdn": "01812345670",
+      "package_name": "Basic",
+      "package_type": "prepaid",
+      "data_quota_mb": 1024,
+      "validity_days": 30,
+      "current_balance": 0,
+      "ticket_ids": [],
+      "createdAt": "2026-05-04T12:22:31.427Z"
+    },
+    {
+      "id": "cust-3ce3d4",
+      "customer_name": "Rabby",
+      "msisdn": "01234567890",
+      "package_name": "Basic",
+      "package_type": "prepaid",
+      "data_quota_mb": 1024,
+      "validity_days": 30,
+      "current_balance": 0,
+      "ticket_ids": [
+        "TT558641"
+      ],
+      "createdAt": "2026-05-04T13:30:20.962Z"
     }
   ],
   "tickets": [
@@ -80,6 +111,17 @@
       ],
       "createdDate": "2026-05-03T09:00:00Z",
       "modifiedDate": "2026-05-03T12:00:00Z"
+    },
+    {
+      "ticketNo": "TT558641",
+      "summary": "Slow internet issue from 12 PM to 2 PM.",
+      "status": "Open",
+      "priority": "Medium",
+      "msisdn": "01234567890",
+      "contractId": "cust-3ce3d4",
+      "notes": [],
+      "createdDate": "2026-05-04T13:32:45.792Z",
+      "modifiedDate": "2026-05-04T13:32:45.792Z"
     }
   ],
   "categories": {
