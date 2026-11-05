@@ -54,6 +54,8 @@
     volume: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/>',
     play: '<path d="M8 5v14l11-7z"/>',
     pause: '<path d="M9 5v14M15 5v14"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   };
   const ic = (name) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ''}</svg>`;
   const av = (o, size = '') => `<span class="av ${size}" style="--h:${o.hue}" aria-hidden="true">${esc(initials(o.name))}</span>`;
@@ -181,6 +183,7 @@
     armed: null,
     longFired: false,
     scrollBottom: false,
+    theme: initialTheme(),
   };
 
   const root = document.getElementById('root');
@@ -318,6 +321,7 @@
     const sc = prevContent ? prevContent.scrollTop : 0;
     const ms = prevMsgs ? prevMsgs.scrollTop : 0;
 
+    document.documentElement.dataset.theme = state.theme;
     if (state.convId && !current()) state.convId = null;
 
     root.innerHTML = shell();
@@ -355,7 +359,22 @@
   }
 
   const roleSeg = () => `<div class="seg mini" role="group" aria-label="View as">${['admin', 'agent'].map((r) => `<button class="${me().role === r ? 'on' : ''}" data-act="role" data-role="${r}" aria-pressed="${me().role === r}">${r === 'admin' ? 'Admin' : 'Agent'}</button>`).join('')}</div>`;
-  const topbar = (title, sub) => `<header class="topbar"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${roleSeg()}</header>`;
+  const themeBtn = () => {
+    const next = state.theme === 'dark' ? 'light' : 'dark';
+    return `<button class="theme" data-act="theme" aria-label="Switch to ${next} theme" title="Switch to ${next} theme">${ic(state.theme === 'dark' ? 'sun' : 'moon')}</button>`;
+  };
+  const topbar = (title, sub) => `<header class="topbar"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="tb-right">${themeBtn()}${roleSeg()}</div></header>`;
+
+  /* Theme: remembered per browser; falls back to the system setting. */
+  function initialTheme() {
+    let saved = null;
+    try { saved = localStorage.getItem('helpdesk-theme'); } catch (_) { /* storage blocked */ }
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function saveTheme(t) {
+    try { localStorage.setItem('helpdesk-theme', t); } catch (_) { /* storage blocked */ }
+  }
   const emptyState = (icon, title, text) => `<div class="empty">${ic(icon)}<b>${title}</b><span>${text}</span></div>`;
 
   function renderTabbar() {
@@ -1136,6 +1155,10 @@
     const id = d.id;
     const c = current();
     switch (name) {
+      case 'theme':
+        state.theme = state.theme === 'dark' ? 'light' : 'dark';
+        saveTheme(state.theme);
+        break;
       case 'role':
         state.me = d.role === 'admin' ? 'u-ayo' : 'u-sara';
         state.sheet = null;

@@ -18,25 +18,28 @@
   --green: #2E7D57;
   --red: #B3261E;
   --radius: 18px;
+  --page-bg: #E9E1D6;
+  color-scheme: light;
   --shadow: 0 1px 2px rgba(24, 18, 14, .06), 0 8px 24px -14px rgba(24, 18, 14, .22);
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Fraunces', Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #140F0C;
-    --surface: #1E1714;
-    --surface-2: #271E19;
-    --ink: #F7EFE7;
-    --ink-2: #BDB1A6;
-    --ink-3: #8C8178;
-    --line: #33281F;
-    --orange-soft: #3A2016;
-    --purple-soft: #2A1F40;
-    --purple-line: #4A3870;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -14px rgba(0, 0, 0, .7);
-  }
+/* Dark theme: set by app.js via data-theme="dark" on <html>. */
+:root[data-theme="dark"] {
+  --bg: #140F0C;
+  --surface: #1E1714;
+  --surface-2: #271E19;
+  --ink: #F7EFE7;
+  --ink-2: #BDB1A6;
+  --ink-3: #8C8178;
+  --line: #33281F;
+  --orange-soft: #3A2016;
+  --purple-soft: #2A1F40;
+  --purple-line: #4A3870;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -14px rgba(0, 0, 0, .7);
+  --page-bg: #0A0706;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -44,15 +47,12 @@ html, body { height: 100%; }
 body {
   margin: 0;
   min-height: 100dvh;
-  background: #E9E1D6;
+  background: var(--page-bg);
   display: grid;
   place-items: center;
   font-family: var(--font-ui);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
-}
-@media (prefers-color-scheme: dark) {
-  body { background: #0A0706; }
 }
 #root { width: 100%; display: flex; justify-content: center; min-width: 0; }
 button, input, textarea, select { font: inherit; color: inherit; }
@@ -976,6 +976,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .call .ctrl .ic { width: 24px; height: 24px; }
 .call .ctrl-label { font-size: 12px; opacity: .75; margin-top: 8px; display: block; }
 .call .ctrls > div { display: flex; flex-direction: column; align-items: center; }
+
+/* ---------- Theme toggle ---------- */
+.tb-right { display: flex; align-items: center; gap: 8px; }
+.theme { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--ink); display: grid; place-items: center; flex: none; }
+.theme .ic { width: 16px; height: 16px; }
 
 /* ---------- Animations ---------- */
 @keyframes slideIn { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
