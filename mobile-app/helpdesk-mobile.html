@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#18120E">
+  <meta name="description" content="Helpdesk mobile prototype: unified inbox, AI assistant with human review, tickets and contacts.">
+  <title>Helpdesk Mobile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:,">
+  <style>
+/* Helpdesk Mobile — design tokens */
+:root {
+  --bg: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F9;
+  --surface-3: #E4EBF2;
+  --line: #DCE4EC;
+  --ink: #1C2733;
+  --ink-2: #55657A;
+  --ink-3: #8796A8;
+  --orange: #C25A24;
+  --orange-600: #A9491A;
+  --orange-soft: #FCEBE0;
+  --purple: #6A3FB0;
+  --purple-600: #56318F;
+  --purple-soft: #F1EAFB;
+  --purple-line: #D7C4F2;
+  --blue: #2F6FB3;
+  --green: #2E8B5E;
+  --amber: #B7791F;
+  --red: #C0392B;
+  --page-bg: #D8E1EB;
+  --chat-bg: linear-gradient(180deg, #EEF3F8 0%, #E1EAF3 100%);
+  --radius: 18px;
+  --shadow: 0 1px 2px rgba(28, 39, 51, .06), 0 6px 18px -12px rgba(28, 39, 51, .22);
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0F1720;
+  --surface: #17212C;
+  --surface-2: #1E2A37;
+  --surface-3: #263446;
+  --line: #2A3A4D;
+  --ink: #EAF0F6;
+  --ink-2: #A6B5C6;
+  --ink-3: #74859B;
+  --orange-soft: #3A2316;
+  --purple-soft: #2A1F40;
+  --purple-line: #4A3870;
+  --page-bg: #070C12;
+  --chat-bg: linear-gradient(180deg, #0E1823 0%, #101D2A 100%);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px -12px rgba(0, 0, 0, .7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--page-bg);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-ui);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+#root { width: 100%; display: flex; justify-content: center; min-width: 0; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, .conv:focus-visible, [contenteditable]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--blue) 55%, transparent);
+  outline-offset: 2px;
+}
+.ic { width: 20px; height: 20px; flex: none; }
+.muted { color: var(--ink-2); }
+
+.phone {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  max-height: calc(100dvh - 24px);
+  background: var(--bg);
+  border-radius: 44px;
+  box-shadow: 0 30px 80px -30px rgba(20, 30, 45, .45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+@media (max-width: 520px) {
+  body { display: block; }
+  .phone { width: 100%; height: 100dvh; max-height: none; border-radius: 0; box-shadow: none; }
+}
+
+.topbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 16px 18px 8px; }
+.topbar h1 { font: 600 27px/1.1 var(--font-display); margin: 0; letter-spacing: -.01em; }
+.topbar p { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
+.tb-right { display: flex; align-items: center; gap: 8px; flex: none; }
+.content { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 120px; -webkit-overflow-scrolling: touch; }
+
+.tabbar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding: 6px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.tab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; color: var(--ink-3); font: 600 11px var(--font-ui); padding: 6px 0; min-height: 52px; }
+.tab.on { color: var(--orange); }
+.tab .badge { position: absolute; top: 2px; left: calc(50% + 6px); }
+.badge { background: var(--orange); color: #fff; font: 700 11px var(--font-ui); min-width: 20px; height: 20px; border-radius: 10px; display: grid; place-items: center; padding: 0 6px; }
+.badge.purple { background: var(--purple); }
+.badge.blue { background: var(--blue); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; padding: 12px 18px; font: 600 14px var(--font-ui); min-height: 44px; transition: transform .12s; }
+.btn .ic { width: 16px; height: 16px; }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--orange); color: #fff; }
+.btn.primary:hover { background: var(--orange-600); }
+.btn.purple { background: var(--purple); color: #fff; }
+.btn.ghost { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.btn.danger { background: transparent; color: var(--red); box-shadow: inset 0 0 0 1px #E8B4AF; }
+.btn.block { width: 100%; }
+.btn.sm { min-height: 36px; padding: 8px 14px; font-size: 13px; }
+
+.icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--ink); display: grid; place-items: center; flex: none; }
+.icon-btn.plain { background: transparent; }
+.icon-btn.accent { color: var(--orange); }
+.icon-btn.on { background: var(--orange-soft); color: var(--orange); }
+
+.seg { display: flex; background: var(--surface-2); border-radius: 999px; padding: 4px; gap: 4px; }
+.seg button { flex: 1; border: 0; background: transparent; color: var(--ink-2); font: 600 13px var(--font-ui); padding: 8px 12px; border-radius: 999px; min-height: 36px; white-space: nowrap; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.seg.mini button { padding: 5px 10px; font-size: 12px; min-height: 28px; }
+
+.chip { display: inline-flex; align-items: center; gap: 4px; font: 600 11px var(--font-ui); padding: 4px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.chip .ic { width: 12px; height: 12px; }
+.chip.ai { background: var(--purple-soft); color: var(--purple); }
+.chip.hot { background: var(--orange-soft); color: var(--orange-600); }
+.chip.urgent { background: #FBE3E0; color: var(--red); }
+.chip.ok { background: #E2F3EA; color: var(--green); }
+.chip.blue { background: #E4EEF9; color: var(--blue); }
+.chip.pick { border: 0; cursor: pointer; font-size: 12px; padding: 6px 10px; min-height: 30px; }
+.chip.pick:hover { background: var(--purple-soft); color: var(--purple); }
+
+.av-wrap { position: relative; flex: none; display: inline-flex; }
+.av { --h: 20; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, hsl(var(--h) 60% 62%), hsl(calc(var(--h) + 40) 55% 44%)); color: #fff; font: 600 15px var(--font-ui); display: grid; place-items: center; flex: none; }
+.av.sm { width: 36px; height: 36px; font-size: 13px; }
+.av.xs { width: 24px; height: 24px; font-size: 9px; }
+.av.lg { width: 96px; height: 96px; font: 600 30px var(--font-display); }
+.ch-badge { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--bg); }
+.ch-badge .ic { width: 10px; height: 10px; }
+.status-dot { position: absolute; left: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: var(--s); box-shadow: 0 0 0 2px var(--bg); }
+
+.searchbar { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 14px; padding: 0 14px; height: 44px; color: var(--ink-3); margin: 10px 0; }
+.searchbar input { flex: 1; min-width: 0; border: 0; background: transparent; font: 500 15px var(--font-ui); color: var(--ink); outline: none; }
+.searchbar input::placeholder { color: var(--ink-3); }
+
+.row-scroll { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 8px; }
+.row-scroll::-webkit-scrollbar { display: none; }
+.pill { flex: none; border: 0; border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 600 13px var(--font-ui); padding: 8px 13px; box-shadow: inset 0 0 0 1px var(--line); min-height: 36px; display: flex; align-items: center; gap: 6px; }
+.pill .ic { width: 15px; height: 15px; }
+.pill b { font-weight: 700; color: var(--ink-3); }
+.pill.on { background: var(--ink); color: var(--bg); box-shadow: none; }
+.pill.on b { color: var(--orange); }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.label { font: 600 12px var(--font-ui); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); margin: 18px 4px 8px; }
+.group-label { font: 600 12px var(--font-ui); color: var(--ink-3); margin: 14px 4px 6px; }
+.note { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; color: var(--ink-3); margin: 4px 2px 0; line-height: 1.4; }
+.note .ic { width: 14px; height: 14px; margin-top: 1px; }
+.link { background: none; border: 0; color: var(--blue); font: 600 13px var(--font-ui); padding: 8px 0 0; }
+.empty { text-align: center; padding: 40px 20px; color: var(--ink-2); }
+.empty .ic { width: 34px; height: 34px; color: var(--ink-3); margin-bottom: 8px; }
+.empty b { display: block; color: var(--ink); font: 600 16px var(--font-display); margin-bottom: 4px; }
+
+.fab { position: absolute; right: 18px; bottom: 96px; height: 52px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--orange); color: #fff; font: 600 14px var(--font-ui); display: flex; gap: 8px; align-items: center; box-shadow: 0 14px 30px -12px rgba(194, 90, 36, .7); z-index: 4; }
+.fab .ic { width: 18px; height: 18px; }
+
+.card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 14px; margin-bottom: 12px; }
+.card h3 { margin: 0 0 10px; font: 600 15px var(--font-ui); display: flex; align-items: center; gap: 8px; }
+.card h3 .ic { width: 17px; height: 17px; color: var(--ink-2); }
+.card h3 .link { margin-left: auto; padding: 0; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.kpi { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); }
+.kpi span { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.kpi b { display: block; font: 600 26px/1.15 var(--font-display); margin-top: 4px; }
+.kpi small { font-size: 12px; color: var(--ink-3); }
+.kpi.alert b { color: var(--orange); }
+.bars { display: flex; align-items: flex-end; gap: 5px; height: 84px; }
+.bars div { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.bars i { display: block; background: linear-gradient(180deg, var(--blue), color-mix(in srgb, var(--blue) 55%, var(--surface-3))); border-radius: 5px 5px 2px 2px; min-height: 4px; }
+.bars span { font-size: 9px; color: var(--ink-3); text-align: center; margin-top: 4px; }
+
+.conv { display: flex; gap: 12px; align-items: center; background: var(--surface); border-radius: 18px; padding: 12px; box-shadow: var(--shadow); cursor: pointer; user-select: none; -webkit-user-select: none; }
+.conv:active { transform: scale(.99); }
+.conv.sel { box-shadow: inset 0 0 0 2px var(--orange); }
+.conv-body { flex: 1; min-width: 0; }
+.row1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.row1 b { font: 600 15px var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row1 time { font-size: 12px; color: var(--ink-3); flex: none; }
+.prev { margin: 2px 0 6px; color: var(--ink-2); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+.prev .ic { width: 15px; height: 15px; color: var(--blue); flex: none; }
+.conv.unread .prev { color: var(--ink); font-weight: 500; }
+.conv.unread .row1 b { font-weight: 700; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.conv-end { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.check { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--ink-3); display: grid; place-items: center; flex: none; color: #fff; }
+.check.on { background: var(--orange); box-shadow: none; }
+.check .ic { width: 14px; height: 14px; }
+
+.bulkbar { position: absolute; left: 12px; right: 12px; bottom: 84px; background: var(--ink); color: var(--bg); border-radius: 22px; padding: 8px 10px; display: flex; align-items: center; gap: 6px; box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .5); z-index: 5; animation: rise .25s; }
+.bulkbar .count { font: 600 14px var(--font-ui); margin-right: auto; padding-left: 6px; white-space: nowrap; }
+.bulkbar button { border: 0; background: rgba(255, 255, 255, .1); color: inherit; border-radius: 14px; padding: 8px 10px; font: 600 12px var(--font-ui); display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 56px; }
+.bulkbar button .ic { width: 18px; height: 18px; }
+.bulkbar button:disabled { opacity: .4; }
+.bulkbar .x { background: none; min-width: 36px; }
+
+.rev { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); border: 1px dashed var(--purple-line); margin-bottom: 10px; }
+.rev-head { display: flex; gap: 10px; align-items: center; }
+.rev-head > div { flex: 1; min-width: 0; }
+.rev-head b { display: block; }
+.rev-head span { font-size: 12px; color: var(--ink-3); }
+.why { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--purple); background: var(--purple-soft); padding: 8px 10px; border-radius: 12px; margin: 10px 0; line-height: 1.4; }
+.why .ic { width: 16px; height: 16px; margin-top: 1px; }
+.draft { font-size: 14px; line-height: 1.5; background: var(--surface-2); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+.row-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.row-actions .ic { width: 15px; height: 15px; }
+
+.group { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 0 14px; margin-bottom: 12px; }
+.setrow { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: 0; padding: 14px 0; border-top: 1px solid var(--line); text-align: left; min-height: 56px; }
+.group > .setrow:first-child { border-top: 0; }
+.setrow .ic { color: var(--blue); width: 20px; height: 20px; }
+.setrow > span { flex: 1; min-width: 0; }
+.setrow b { display: block; font: 600 15px var(--font-ui); }
+.setrow small { color: var(--ink-2); font-size: 12px; }
+.setrow > .chev { color: var(--ink-3); width: 18px; height: 18px; }
+.rule { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid var(--line); }
+.group .rule:first-child { border-top: 0; }
+.rule > div { flex: 1; min-width: 0; }
+.rule b { font-size: 14px; }
+.rule small { display: block; color: var(--ink-2); font-size: 12px; margin-top: 2px; line-height: 1.4; }
+.switch { width: 50px; height: 30px; border-radius: 999px; border: 0; background: var(--surface-3); position: relative; flex: none; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .2s; }
+.switch.on { background: var(--blue); }
+.switch.on::after { transform: translateX(20px); }
+.select { border: 0; background: var(--surface-2); border-radius: 12px; padding: 9px 30px 9px 12px; font: 600 13px var(--font-ui); min-height: 36px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+
+.layer { position: absolute; inset: 0; background: var(--bg); z-index: 20; display: flex; flex-direction: column; animation: slideIn .28s cubic-bezier(.2, .8, .2, 1); }
+.chat-head { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 4px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.head-id { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: none; border: 0; text-align: left; padding: 0 4px; }
+.head-id > span { display: flex; flex-direction: column; min-width: 0; }
+.head-id b { font: 600 15px var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.head-id small { color: var(--ink-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; font-size: 13px; font-weight: 500; }
+.bar .ic { width: 16px; height: 16px; }
+.bar span { flex: 1; }
+.bar .btn { min-height: 32px; padding: 6px 12px; font-size: 12px; }
+.bar.ai { background: var(--purple-soft); color: var(--purple); }
+.bar.snooze, .bar.closed { background: var(--surface-2); color: var(--ink-2); }
+.msgs { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 12px 16px; display: flex; flex-direction: column; gap: 3px; background: var(--chat-bg); }
+.day-chip { align-self: center; font: 600 12px var(--font-ui); color: var(--ink-2); background: color-mix(in srgb, var(--surface) 80%, transparent); padding: 4px 10px; border-radius: 999px; margin: 8px 0; box-shadow: var(--shadow); }
+.msg { display: flex; flex-direction: column; max-width: 84%; margin-top: 4px; }
+.msg.in, .msg.ai { align-self: flex-start; align-items: flex-start; }
+.msg.out { align-self: flex-end; align-items: flex-end; }
+.msg.wide { max-width: 100%; width: 100%; }
+.msg.grouped { margin-top: 0; }
+.who { font: 700 12px var(--font-ui); color: var(--ink-2); margin: 0 10px 2px; }
+.msg.ai .who { color: var(--purple); }
+.msg.out .who { color: var(--orange); }
+.bubble { position: relative; padding: 7px 10px 5px; border-radius: 16px; font-size: 15px; line-height: 1.4; background: var(--surface); box-shadow: 0 1px 1px rgba(28, 39, 51, .08); max-width: 100%; overflow-wrap: anywhere; }
+.bubble p { margin: 0; }
+.msg.in .bubble { border-top-left-radius: 5px; }
+.msg.out .bubble { background: #FCE6D7; color: var(--ink); border-top-right-radius: 5px; }
+:root[data-theme="dark"] .msg.out .bubble { background: #3D2A1F; }
+.msg.ai .bubble { background: var(--purple-soft); border-top-left-radius: 5px; box-shadow: inset 3px 0 0 var(--purple); }
+.meta { float: right; margin: 6px 0 -2px 10px; display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--ink-3); }
+.meta .ic { width: 13px; height: 13px; color: var(--blue); }
+.msg.out .meta .ic { color: var(--orange); }
+.media { padding: 4px; }
+.img { margin: 0; width: 230px; max-width: 100%; }
+.img-frame { height: 150px; border-radius: 12px; background: linear-gradient(135deg, var(--tone), color-mix(in srgb, var(--tone) 45%, #2A3A4D)); display: grid; place-items: center; color: rgba(255, 255, 255, .9); overflow: hidden; }
+.img-frame .ic { width: 34px; height: 34px; }
+.img-frame img { width: 100%; height: 100%; object-fit: cover; }
+.img figcaption { font-size: 12px; margin: 5px 6px 2px; color: var(--ink-2); }
+.file { display: flex; gap: 10px; align-items: center; min-width: 210px; }
+.file > .ic { width: 36px; height: 36px; padding: 8px; border-radius: 12px; background: var(--surface-2); color: var(--orange); box-sizing: border-box; }
+.file b { display: block; font-size: 14px; }
+.file small { font-size: 12px; color: var(--ink-2); }
+.voice { display: flex; align-items: center; gap: 10px; min-width: 220px; }
+.play { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--blue); color: #fff; display: grid; place-items: center; flex: none; }
+.play .ic { width: 14px; height: 14px; }
+.wave { flex: 1; display: flex; align-items: center; gap: 2px; height: 26px; min-width: 0; color: var(--blue); }
+.wave i { flex: 1; background: currentColor; opacity: .45; border-radius: 2px; min-height: 4px; width: 3px; }
+.voice small { font-size: 12px; color: var(--ink-2); }
+.carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 8px; width: 100%; scrollbar-width: none; }
+.carousel::-webkit-scrollbar { display: none; }
+.car-card { flex: none; width: 214px; scroll-snap-align: start; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+.car-img { height: 92px; background: linear-gradient(135deg, var(--tone), color-mix(in srgb, var(--tone) 40%, #2A3A4D)); display: grid; place-items: center; color: rgba(255, 255, 255, .92); }
+.car-img .ic { width: 30px; height: 30px; }
+.car-card .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.car-card b { font: 600 14px var(--font-ui); }
+.car-card small { color: var(--ink-2); font-size: 12px; }
+.car-meta { margin-top: auto; padding-top: 6px; }
+.car-meta strong { font-size: 14px; }
+.qrs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.qr { border: 1px solid var(--purple-line); background: var(--surface); color: var(--purple); font: 600 13px var(--font-ui); padding: 7px 12px; border-radius: 999px; min-height: 34px; }
+.qr:hover { background: var(--purple-soft); }
+.reviewed { display: flex; align-items: center; gap: 4px; color: var(--green); font-size: 11px; margin: 2px 10px 0; font-weight: 600; }
+.reviewed .ic { width: 12px; height: 12px; }
+.sys { align-self: center; font-size: 12px; color: var(--ink-2); background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 4px 11px; border-radius: 999px; display: flex; gap: 6px; align-items: center; text-align: center; margin: 6px 0; box-shadow: var(--shadow); }
+.sys .ic { width: 13px; height: 13px; }
+.typing { align-self: flex-start; display: flex; gap: 4px; padding: 12px 14px; background: var(--purple-soft); border-radius: 16px; margin-top: 4px; }
+.typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--purple); animation: blink 1.2s infinite; }
+.typing i:nth-child(2) { animation-delay: .2s; }
+.typing i:nth-child(3) { animation-delay: .4s; }
+.rstrip { margin: 0 10px 8px; background: var(--surface); border: 1px dashed var(--purple-line); border-radius: 18px; padding: 12px; box-shadow: var(--shadow); }
+.rs-head { display: flex; align-items: center; gap: 8px; font: 600 14px var(--font-ui); color: var(--purple); }
+.rs-head .ic { width: 18px; height: 18px; }
+.rs-head .chip { margin-left: auto; }
+.rstrip .why { margin: 8px 0; }
+.rstrip .draft { margin-bottom: 8px; }
+
+.composer { background: var(--surface); border-top: 1px solid var(--line); padding: 8px 8px calc(10px + env(safe-area-inset-bottom)); }
+.ai-row { display: flex; align-items: center; gap: 8px; margin: 0 4px 6px; min-height: 26px; }
+.ai-hint { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--purple); }
+.ai-hint .ic { width: 14px; height: 14px; }
+.chip-btn { border: 0; border-radius: 999px; background: var(--purple-soft); color: var(--purple); font: 600 12px var(--font-ui); padding: 5px 10px; display: inline-flex; gap: 6px; align-items: center; min-height: 28px; }
+.chip-btn .ic { width: 13px; height: 13px; }
+.fmt-row { margin-bottom: 6px; border-radius: 14px; background: var(--surface-2); }
+.canned { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--line); margin: 0 0 8px; max-height: 210px; overflow-y: auto; }
+.canned button { display: flex; width: 100%; gap: 10px; align-items: flex-start; text-align: left; border: 0; background: none; padding: 10px 12px; border-top: 1px solid var(--line); }
+.canned button:first-child { border-top: 0; }
+.canned button:hover, .canned button.on { background: var(--surface-2); }
+.canned b { font: 700 13px var(--font-ui); color: var(--blue); white-space: nowrap; }
+.canned small { display: block; color: var(--ink-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+.canned-head { padding: 8px 12px 4px; font: 600 11px var(--font-ui); color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+.comp-row { display: flex; align-items: flex-end; gap: 6px; }
+.editor-wrap { flex: 1; min-width: 0; background: var(--surface-2); border-radius: 20px; }
+.editor-wrap .editor { min-height: 40px; max-height: 120px; padding: 10px 14px; font-size: 15px; }
+.comp-row .icon-btn { width: 40px; height: 40px; }
+.comp-row .send { display: none; background: var(--blue); color: #fff; }
+.composer.has-text .send { display: grid; }
+.composer.has-text .mic { display: none; }
+.rec { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 24px; padding: 6px 6px 6px 14px; }
+.rec .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: blink 1s infinite; flex: none; }
+.rec .wave { height: 24px; color: var(--red); }
+.rec time { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
+.rec .btn { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+
+.call { position: absolute; inset: 0; z-index: 40; background: radial-gradient(120% 70% at 50% 0%, #3B6FB6 0%, #15283D 50%, #0B1420 100%); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 40px 24px; text-align: center; animation: slideIn .3s; }
+.call .eyebrow { margin: 0; opacity: .75; font-size: 13px; }
+.call h2 { font: 600 28px var(--font-display); margin: 12px 0 0; }
+.call .timer { margin: 0; font-size: 18px; font-variant-numeric: tabular-nums; opacity: .9; }
+.call .ctrls { display: flex; gap: 18px; margin-top: 44px; }
+.call .ctrls > div { display: flex; flex-direction: column; align-items: center; }
+.call .ctrl { width: 64px; height: 64px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .14); color: #fff; display: grid; place-items: center; }
+.call .ctrl.on { background: #fff; color: var(--ink); }
+.call .ctrl.end { background: var(--red); }
+.call .ctrl.end .ic { transform: rotate(135deg); }
+.call .ctrl .ic { width: 24px; height: 24px; }
+.call .ctrl-label { font-size: 12px; opacity: .75; margin-top: 8px; }
+
+.scrim { position: absolute; inset: 0; background: rgba(16, 26, 38, .42); z-index: 30; animation: fade .2s; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; background: var(--bg); border-radius: 26px 26px 0 0; z-index: 31; display: flex; flex-direction: column; animation: up .28s cubic-bezier(.2, .8, .2, 1); box-shadow: 0 -20px 50px -20px rgba(0, 0, 0, .4); padding-bottom: env(safe-area-inset-bottom); }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 10px auto 0; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 18px 4px 22px; }
+.sheet-head h2 { font: 600 21px var(--font-display); margin: 0; }
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 18px 28px; display: flex; flex-direction: column; gap: 12px; }
+.row-btn { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--surface); border: 0; border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); text-align: left; min-height: 58px; }
+.row-btn > span { flex: 1; min-width: 0; }
+.row-btn b { display: block; font: 600 15px var(--font-ui); }
+.row-btn small { color: var(--ink-2); font-size: 12px; }
+.row-btn > .ic { color: var(--ink-3); width: 18px; height: 18px; }
+.row-btn > .ic.blue { color: var(--blue); }
+.row-btn.on { box-shadow: inset 0 0 0 2px var(--orange); }
+.row-btn.locked { opacity: .6; }
+.sec { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); }
+.sec h4 { margin: 0 0 10px; font: 600 12px var(--font-ui); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
+.sec .row-btn { box-shadow: none; background: var(--surface-2); margin-top: 6px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font: 600 12px var(--font-ui); color: var(--ink-2); }
+.field input, .field select, .field textarea { border: 0; background: var(--surface); border-radius: 14px; padding: 12px 14px; font: 500 15px var(--font-ui); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); min-height: 46px; width: 100%; resize: vertical; }
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline-offset: 0; }
+.rich { background: var(--surface); border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.fmt-bar { display: flex; gap: 2px; padding: 6px; background: var(--surface-2); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.fmt-bar button { width: 36px; height: 34px; border: 0; background: transparent; border-radius: 10px; color: var(--ink-2); display: grid; place-items: center; flex: none; }
+.fmt-bar button:hover { background: var(--surface); color: var(--ink); }
+.fmt-bar .ic { width: 17px; height: 17px; }
+.editor { min-height: 96px; max-height: 220px; overflow-y: auto; padding: 12px 14px; font: 500 15px/1.45 var(--font-ui); outline: none; word-break: break-word; }
+.editor:empty::before { content: attr(data-placeholder); color: var(--ink-3); pointer-events: none; }
+.editor a { color: var(--blue); }
+.editor code, .bubble code { font: 500 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: color-mix(in srgb, var(--ink) 9%, transparent); padding: 1px 5px; border-radius: 6px; }
+.editor ul, .bubble ul { margin: 4px 0; padding-left: 20px; }
+.profile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 4px 0; }
+.profile h2 { font: 600 24px var(--font-display); margin: 8px 0 0; }
+.quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.quick button, .quick .qa { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--surface); border: 0; border-radius: 16px; padding: 12px 6px; box-shadow: var(--shadow); font: 600 12px var(--font-ui); color: var(--ink); min-height: 66px; text-decoration: none; }
+.quick .ic { color: var(--blue); }
+.lbl-input { display: flex; gap: 8px; margin-top: 10px; }
+.lbl-input input { flex: 1; min-width: 0; border: 0; background: var(--surface-2); border-radius: 14px; padding: 10px 14px; font: 500 14px var(--font-ui); min-height: 40px; outline: none; }
+.sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; margin: 0; font-size: 14px; }
+.kv dt { color: var(--ink-3); }
+.kv dd { margin: 0; text-align: right; font-weight: 500; overflow-wrap: anywhere; }
+.toast { position: absolute; left: 14px; right: 14px; bottom: 92px; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 14px; z-index: 50; box-shadow: 0 14px 30px -12px rgba(0, 0, 0, .5); animation: rise .25s; }
+.toast span { flex: 1; }
+.toast button { border: 0; background: none; color: #FFB48A; font: 700 14px var(--font-ui); padding: 6px; pointer-events: auto; }
+
+.greet-status { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: var(--surface-2); font: 600 13px var(--font-ui); }
+.greet-status i { width: 9px; height: 9px; border-radius: 50%; background: var(--s); }
+.countdown { font: 600 22px var(--font-display); font-variant-numeric: tabular-nums; }
+.team-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.team-row:first-of-type { border-top: 0; }
+.team-row > div { flex: 1; min-width: 0; }
+.team-row b { display: block; font-size: 14px; }
+.team-row small { color: var(--ink-2); font-size: 12px; }
+.status-seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.status-seg button { border: 0; background: var(--surface-2); border-radius: 14px; padding: 10px 4px; font: 600 12px var(--font-ui); color: var(--ink-2); display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 58px; }
+.status-seg button i { width: 10px; height: 10px; border-radius: 50%; background: var(--s); }
+.status-seg button.on { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); background: var(--surface); }
+.break-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.break-row:first-of-type { border-top: 0; }
+.break-row > div { flex: 1; min-width: 0; }
+.break-row b { display: block; font-size: 14px; }
+.break-row small { color: var(--ink-2); font-size: 12px; }
+.kpi-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.kpi-strip div { background: var(--surface); border-radius: 16px; padding: 12px; box-shadow: var(--shadow); }
+.kpi-strip b { display: block; font: 600 20px var(--font-display); }
+.kpi-strip span { font-size: 11px; color: var(--ink-2); font-weight: 600; }
+.camp { display: block; width: 100%; text-align: left; background: var(--surface); border: 0; border-radius: 18px; padding: 14px; box-shadow: var(--shadow); color: inherit; }
+.camp-top { display: flex; align-items: center; gap: 10px; }
+.camp-top > div { flex: 1; min-width: 0; }
+.camp-top b { display: block; font: 600 15px var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.camp-top small { color: var(--ink-2); font-size: 12px; }
+.camp .meter { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+.camp .meter i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
+.camp .meta-line { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+.funnel { display: grid; gap: 10px; margin: 6px 0 4px; }
+.funnel div { display: grid; grid-template-columns: 78px 1fr 58px; align-items: center; gap: 10px; font-size: 13px; }
+.funnel .track { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.funnel .track i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
+.funnel b { text-align: right; font-variant-numeric: tabular-nums; }
+.locknote { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); background: var(--surface-2); padding: 10px 12px; border-radius: 14px; margin: 12px 0 4px; }
+.locknote .ic { width: 16px; height: 16px; }
+.chan-chip { display: inline-flex; align-items: center; gap: 6px; }
+.chan-chip .ch-mini { width: 16px; height: 16px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; }
+.chan-chip .ch-mini .ic { width: 10px; height: 10px; }
+.tagchip button { border: 0; background: none; padding: 0 0 0 2px; color: inherit; display: inline-flex; cursor: pointer; }
+.tagchip button .ic { width: 12px; height: 12px; }
+.stack { display: flex; height: 12px; border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
+.stack i { display: block; height: 100%; background: var(--c); }
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 13px; }
+.legend span { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.legend b { color: var(--ink); margin-left: auto; }
+.progress { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 6px 0 12px; }
+.progress i { display: block; height: 100%; background: var(--purple); border-radius: 999px; }
+
+@keyframes slideIn { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <input type="file" id="file-input" multiple hidden>
+  <script>
+/* Helpdesk Mobile — high-fidelity prototype */
+(() => {
+  'use strict';
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const isoAgo = (min) => new Date(Date.now() - min * 60000).toISOString();
+  const isoIn = (min) => new Date(Date.now() + min * 60000).toISOString();
+  const M = (from, type, props = {}, ago = 0) => ({ id: uid(), from, type, time: isoAgo(ago), ...props });
+  const rel = (iso) => {
+    const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
+    if (m < 1) return 'now';
+    if (m < 60) return m + 'm';
+    const h = Math.round(m / 60);
+    return h < 24 ? h + 'h' : Math.round(h / 24) + 'd';
+  };
+  const clock = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const clockFull = (iso) => new Date(iso).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  const fmtSize = (b) => (b > 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.round(b / 1e3) + ' KB');
+  const fmtDur = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const fmtMs = (ms) => fmtDur(Math.max(0, Math.ceil(ms / 1000)));
+  const initials = (n) => n.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+  const attrs = (o) => Object.entries(o).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ');
+
+  const ICON = {
+    home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+    inbox: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 13h5l1.5 2h5l1.5-2h5"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 13.5a6.5 6.5 0 0 1 3.5 6.5"/>',
+    megaphone: '<path d="M3 11v2a1 1 0 0 0 1 1h3l7 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M18 8a5 5 0 0 1 0 8"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    coffee: '<path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h2a2 2 0 0 1 0 4h-2"/><path d="M8 2v3M12 2v3"/>',
+    bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
+    hash: '<path d="M5 9h14M5 15h14M10 4l-2 16M16 4l-2 16"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+    select: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
+    message: '<path d="M4 5h16v11H9l-5 4z"/>',
+    zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    smartphone: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+    checks: '<path d="M2 12.5l4 4L14 8"/><path d="M10 16.5l1 1 9-10"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    aa: '<path d="M3 19l5-14 5 14M5.5 14h6M15 19l3-8 3 8M16 16h4"/>',
+    bold: '<path d="M6 4h8a4 4 0 0 1 0 8H6zM6 12h9a4 4 0 0 1 0 8H6z"/>',
+    italic: '<path d="M19 4h-9M14 20H5M15 4L9 20"/>',
+    underline: '<path d="M6 4v7a6 6 0 0 0 12 0V4M4 21h16"/>',
+    strike: '<path d="M4 12h16M16 6.5C15 5 13.5 4 12 4c-2.5 0-4 1.3-4 3 0 4 8 2.5 8 7 0 1.7-1.5 3-4 3-2 0-3.5-1-4.5-2.5"/>',
+    code: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    chevron: '<path d="M9 5l7 7-7 7"/>',
+    more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+    send: '<path d="M4 12l16-8-6 16-2-7z"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    clip: '<path d="M20 11.5l-7.8 7.8a5 5 0 0 1-7-7L13 4.5a3.5 3.5 0 0 1 5 5L10.3 17a2 2 0 0 1-3-3L15 6.5"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    userPlus: '<circle cx="10" cy="8" r="4"/><path d="M2 21a8 8 0 0 1 16 0M19 8v6M16 11h6"/>',
+    ticket: '<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12"/>',
+    tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    reply: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v5"/>',
+    shield: '<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/>',
+    spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 1.8 1.8.7-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
+    volume: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/>',
+    play: '<path d="M8 5v14l11-7z"/>',
+    pause: '<path d="M9 5v14M15 5v14"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  };
+  const ic = (name) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ''}</svg>`;
+
+  const CHANNELS = {
+    whatsapp: { label: 'WhatsApp', icon: 'message', color: '#2E9A5C' },
+    messenger: { label: 'Messenger', icon: 'zap', color: '#2F6FD6' },
+    web: { label: 'Web chat', icon: 'globe', color: '#5B6B7D' },
+    sms: { label: 'SMS', icon: 'smartphone', color: '#B7791F' },
+    email: { label: 'Email', icon: 'mail', color: '#0F7C8C' },
+  };
+  const chBadge = (key) => {
+    const c = CHANNELS[key];
+    return c ? `<span class="ch-badge" style="--c:${c.color}" title="${c.label}">${ic(c.icon)}</span>` : '';
+  };
+  const av = (o, size = '', channel = null, statusKey = null) => {
+    const dot = statusKey ? `<span class="status-dot" style="--s:${STATUS[statusKey].color}"></span>` : '';
+    return `<span class="av-wrap"><span class="av ${size}" style="--h:${o.hue}" aria-hidden="true">${esc(initials(o.name))}</span>${channel ? chBadge(channel) : ''}${dot}</span>`;
+  };
+  const STATUS = {
+    available: { label: 'Available', color: '#2E8B5E' },
+    busy: { label: 'Busy', color: '#B7791F' },
+    away: { label: 'Away', color: '#C07A2C' },
+    break: { label: 'On break', color: '#6A3FB0' },
+    offline: { label: 'Offline', color: '#8796A8' },
+  };
+
+  const USERS = [
+    { id: 'u-ayo', name: 'Ayo Bello', role: 'admin', hue: 18, status: 'available', breakEnd: null, breakType: null, used: { short: 0, lunch: 0 } },
+    { id: 'u-sara', name: 'Sara Lindqvist', role: 'agent', hue: 270, status: 'available', breakEnd: null, breakType: null, used: { short: 1, lunch: 0 } },
+    { id: 'u-kofi', name: 'Kofi Mensah', role: 'agent', hue: 150, status: 'break', breakEnd: Date.now() + 9 * 60000, breakType: 'short', used: { short: 1, lunch: 0 } },
+    { id: 'u-imani', name: 'Imani Obi', role: 'agent', hue: 330, status: 'offline', breakEnd: null, breakType: null, used: { short: 0, lunch: 0 } },
+  ];
+  const VERTICALS = { ecommerce: 'E-commerce', bfsi: 'BFSI', other: 'Business' };
+  let LABELS = ['VIP', 'Shipping', 'Billing', 'Refund risk', 'Churn risk', 'Fraud watch', 'KYC pending', 'Wholesale', 'Priority partner'];
+
+  let BREAK_POLICY = {
+    short: { label: 'Short break', mins: 15, max: 2 },
+    lunch: { label: 'Lunch', mins: 30, max: 1 },
+  };
+
+  const CONTACTS = [
+    { id: 'c1', name: 'Amara Okafor', phone: '+234 803 555 0142', email: 'amara.o@example.com', city: 'Lagos', vertical: 'ecommerce', tags: ['VIP', 'Shipping'], since: 'Apr 2023', ltv: '$2,140', hue: 24, attrs: { 'Preferred channel': 'WhatsApp', Orders: '14' } },
+    { id: 'c2', name: 'Lukas Brandt', phone: '+49 170 555 0198', email: 'lukas@brandt.de', city: 'Berlin', vertical: 'bfsi', tags: ['KYC pending'], since: 'Jan 2025', ltv: '€6,310', hue: 200, attrs: { Account: 'Current · 4417' } },
+    { id: 'c3', name: 'Priya Raman', phone: '+44 7700 900421', email: 'priya.r@example.co.uk', city: 'London', vertical: 'bfsi', tags: ['Fraud watch', 'Priority partner'], since: 'Aug 2022', ltv: '£9,880', hue: 300, attrs: { Account: 'Premium' } },
+    { id: 'c4', name: 'Noah Chen', phone: '+1 415 555 0177', email: 'noah.chen@example.com', city: 'San Francisco', vertical: 'ecommerce', tags: ['Billing'], since: 'Mar 2024', ltv: '$710', hue: 200, attrs: { Orders: '5' } },
+    { id: 'c5', name: 'Mariana Costa', phone: '+351 912 555 310', email: 'mariana@costa-studio.pt', city: 'Lisbon', vertical: 'other', tags: ['Wholesale'], since: 'Jun 2025', ltv: '€3,400', hue: 120, attrs: { Company: 'Costa Studio' } },
+    { id: 'c6', name: 'Daniel Ruiz', phone: '+34 611 555 208', email: 'daniel.ruiz@example.es', city: 'Madrid', vertical: 'ecommerce', tags: ['Churn risk', 'Refund risk'], since: 'Oct 2021', ltv: '$1,020', hue: 10, attrs: { Orders: '22' } },
+    { id: 'c7', name: 'Hana Sato', phone: '+81 90 5555 0134', email: 'hana.sato@example.jp', city: 'Osaka', vertical: 'bfsi', tags: ['VIP'], since: 'Feb 2020', ltv: '¥1.2M', hue: 335, attrs: { Account: 'Private banking' } },
+    { id: 'c8', name: 'Tomas Novak', phone: '+420 603 555 019', email: 'tomas@novak.cz', city: 'Prague', vertical: 'other', tags: [], since: 'Nov 2024', ltv: '—', hue: 260, attrs: {} },
+  ];
+
+  const ORDERS = [
+    { title: 'Linen throw', sub: '#88194 · Out for delivery', meta: '$64.00', tone: '#E7C9A5', actions: ['Track', 'Get help'] },
+    { title: 'Ceramic vase', sub: '#88102 · Delivered 2 Nov', meta: '$48.00', tone: '#C9B6D9', actions: ['Return', 'Reorder'] },
+    { title: 'Woven tote', sub: '#87940 · Delivered 28 Oct', meta: '$32.00', tone: '#B9D2C4', actions: ['Return', 'Reorder'] },
+  ];
+
+  let CONVS = [
+    { id: 'v1', contact: 'c1', channel: 'whatsapp', status: 'open', assignee: 'u-sara', priority: 'high', mode: 'human', unread: 2, snoozeUntil: null, pendingDraft: null, messages: [
+      M('customer', 'text', { text: 'Hi, my order shows as delivered but it never reached me 😞' }, 46),
+      M('customer', 'image', { name: 'doorstep.jpg', tone: '#C9A27E' }, 45),
+      M('bot', 'text', { text: 'Thanks for the photo. I have flagged this for a delivery investigation.' }, 44),
+      M('system', 'event', { text: 'Escalated to Sara Lindqvist' }, 40),
+      M('agent', 'text', { html: 'Hi Amara, I am <b>so sorry</b>. I am checking the courier scan right now.', author: 'u-sara' }, 30),
+      M('customer', 'voice', { dur: 12 }, 6),
+      M('customer', 'text', { text: 'Thank you. Please let me know as soon as you can.' }, 3),
+    ] },
+    { id: 'v2', contact: 'c2', channel: 'web', status: 'open', assignee: null, priority: 'high', mode: 'bot', unread: 1, snoozeUntil: null,
+      pendingDraft: { text: 'I have opened a dispute for €480.00 on your card ending 4417. A specialist will confirm within 2 business days.', buttons: ['Track dispute', 'Talk to a human'], reason: 'Financial action over €250 needs human approval', confidence: 0.64 },
+      messages: [
+        M('bot', 'text', { text: 'Hi Lukas, welcome back. How can I help today?', buttons: ['Check balance', 'Block my card', 'Dispute a charge', 'Talk to a human'] }, 22),
+        M('customer', 'text', { text: 'I want to dispute a charge of €480 from February' }, 5),
+        M('bot', 'text', { text: 'Understood. I have prepared the details for a specialist to check before anything changes.' }, 4),
+      ] },
+    { id: 'v3', contact: 'c3', channel: 'messenger', status: 'snoozed', assignee: null, priority: 'normal', mode: 'human', unread: 0, snoozeUntil: isoIn(180), pendingDraft: null, messages: [
+      M('customer', 'text', { text: 'There is a payment I do not recognise: £79.99 to MERCHANT*X' }, 95),
+      M('agent', 'text', { text: 'Thanks Priya. I have placed a temporary hold on the card while we check.', author: 'u-ayo' }, 90),
+      M('system', 'event', { text: 'Snoozed by Ayo Bello' }, 60),
+    ] },
+  ];
+
+  let TICKETS = [
+    { id: 'TT482015', subject: 'Delivery not received · order #88213', contact: 'c1', status: 'Open', priority: 'high', assignee: 'u-sara', createdAt: isoAgo(1200), conv: 'v1' },
+    { id: 'TT482377', subject: 'Dispute · €480 card charge (Feb)', contact: 'c2', status: 'InProgress', priority: 'urgent', assignee: null, createdAt: isoAgo(300), conv: 'v2' },
+  ];
+
+  let CAMPAIGNS = [
+    { id: 'k1', name: 'Holiday shipping update', channel: 'whatsapp', status: 'Sent', audience: { label: 'All customers', count: 1240 }, when: isoAgo(60 * 26), stats: { sent: 1240, delivered: 1198, read: 842, clicked: 213 }, html: 'Hi {{name}}, our holiday shipping cut-off is <b>16 Dec</b>. <a href="https://example.com/shipping">See delivery dates</a>.', by: 'u-ayo' },
+  ];
+
+  let CANNED = [
+    { id: 'r1', shortcut: 'refund', title: 'Refund processed', text: 'Hi {{name}}, your refund has been processed. Allow 3 to 5 working days to appear.', scope: 'global', owner: 'u-ayo' },
+  ];
+
+  const CHANNEL_ON = { whatsapp: true, messenger: true, web: true, sms: true, email: false };
+  const RULES = { holdFinance: true, carousel: true, anger: true, aiHints: true };
+
+  const AGENT_OK = new Set(['selfAssign', 'reply', 'close', 'snooze', 'ticket', 'status', 'labels', 'addContact', 'takeOver', 'breakSelf', 'notifSelf', 'cannedPersonal', 'viewCampaigns']);
+  const DENY_MSG = { assignOthers: 'assign chats or tickets to other agents', deleteContact: 'delete contacts', deleteTicket: 'delete tickets', createLabel: 'create new labels', botRules: 'change AI rules', breakPolicy: 'change the team break policy', teamBreaks: 'end other people\'s breaks', createCampaign: 'create or send campaigns', cannedGlobal: 'edit shared canned replies', channels: 'change connected channels', manageTeam: 'change team roles' };
+
+  const state = {
+    me: 'u-ayo',
+    tab: 'home',
+    inboxSeg: 'chats',
+    filter: 'open',
+    channel: 'all',
+    q: '',
+    cq: '',
+    tfilter: 'all',
+    campFilter: 'all',
+    settingsView: null,
+    selecting: false,
+    selected: [],
+    convId: null,
+    drafts: {},
+    draftHtml: '',
+    fmtOpen: false,
+    cannedQ: null,
+    cannedIdx: 0,
+    aiHint: false,
+    typing: null,
+    call: null,
+    rec: null,
+    sheet: null,
+    form: {},
+    labelIn: '',
+    toast: null,
+    armed: null,
+    longFired: false,
+    scrollBottom: false,
+    theme: initialTheme(),
+    returnStatus: 'available',
+    autoAway: 10,
+    lastActive: Date.now(),
+    delivery: { push: true, email: false, sound: true },
+    notif: { assigned: true, reply: true, mention: true, slaRisk: true, aiReview: true, ticket: true, campaign: false },
+    dndBreak: true,
+    quiet: false,
+  };
+
+  function initialTheme() {
+    let saved = null;
+    try { saved = localStorage.getItem('helpdesk-theme'); } catch (_) { }
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function saveTheme(t) {
+    try { localStorage.setItem('helpdesk-theme', t); } catch (_) { }
+  }
+
+  const root = document.getElementById('root');
+  const fileInput = document.getElementById('file-input');
+
+  const userById = (id) => USERS.find((u) => u.id === id);
+  const me = () => userById(state.me);
+  const admin = () => me().role === 'admin';
+  const can = (perm) => admin() || AGENT_OK.has(perm);
+  const contactById = (id) => CONTACTS.find((c) => c.id === id);
+  const convById = (id) => CONVS.find((c) => c.id === id);
+  const ticketById = (id) => TICKETS.find((t) => t.id === id);
+  const campaignById = (id) => CAMPAIGNS.find((c) => c.id === id);
+  const cannedById = (id) => CANNED.find((c) => c.id === id);
+  const contactOf = (c) => contactById(c.contact);
+  const current = () => (state.convId ? convById(state.convId) : null);
+  const firstName = (o) => o.name.split(' ')[0];
+  const lastMsg = (c) => c.messages[c.messages.length - 1];
+  const lastTime = (c) => new Date(lastMsg(c).time).getTime();
+
+  function deny(perm) {
+    if (can(perm)) return false;
+    toast(`Only admins can ${DENY_MSG[perm]}.`);
+    return true;
+  }
+
+  function sys(c, text) { c.messages.push(M('system', 'event', { text })); }
+
+  const plain = (m) => (m.html ? m.html.replace(/<[^>]+>/g, '') : m.text || '');
+  function preview(m) {
+    switch (m.type) {
+      case 'image': return '📷 Photo';
+      case 'file': return '📎 ' + m.name;
+      case 'voice': return '🎙 Voice message · ' + fmtDur(m.dur);
+      case 'carousel': return '✦ Product carousel';
+      case 'call': return '📞 Voice call';
+      default:
+        if (m.from === 'system') return m.text;
+        if (m.from === 'agent') return 'You: ' + plain(m);
+        if (m.from === 'bot') return '✦ ' + plain(m);
+        return plain(m);
+    }
+  }
+
+  function matchesFilter(c, f) {
+    if (f === 'open') return c.status === 'open';
+    if (f === 'mine') return c.status === 'open' && c.assignee === state.me;
+    if (f === 'unassigned') return c.status === 'open' && !c.assignee;
+    if (f === 'snoozed') return c.status === 'snoozed';
+    if (f === 'closed') return c.status === 'closed';
+    return true;
+  }
+
+  function visibleConvs() {
+    const q = state.q.trim().toLowerCase();
+    return CONVS
+      .filter((c) => matchesFilter(c, state.filter))
+      .filter((c) => state.channel === 'all' || c.channel === state.channel)
+      .filter((c) => !q || (contactOf(c).name + ' ' + preview(lastMsg(c))).toLowerCase().includes(q))
+      .sort((a, b) => lastTime(b) - lastTime(a));
+  }
+
+  function snoozeUntilFor(k) {
+    if (k === 'tomorrow') { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d.toISOString(); }
+    if (k === 'monday') { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d.toISOString(); }
+    return isoIn(Number(k));
+  }
+
+  const ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'DEL', 'CODE', 'A', 'BR', 'UL', 'OL', 'LI', 'P', 'DIV', 'SPAN']);
+  function sanitize(html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = String(html || '');
+    const clean = (node) => {
+      for (const child of Array.from(node.childNodes)) {
+        if (child.nodeType === 3) continue;
+        if (child.nodeType !== 1) { child.remove(); continue; }
+        clean(child);
+        const tag = child.tagName;
+        if (!ALLOWED_TAGS.has(tag)) { child.replaceWith(...Array.from(child.childNodes)); continue; }
+        const href = tag === 'A' ? child.getAttribute('href') || '' : '';
+        Array.from(child.attributes).forEach((a) => child.removeAttribute(a.name));
+        if (tag === 'A') {
+          if (/^(https?:|mailto:)/i.test(href.trim())) {
+            child.setAttribute('href', href.trim());
+            child.setAttribute('target', '_blank');
+            child.setAttribute('rel', 'noopener noreferrer');
+          } else {
+            child.replaceWith(...Array.from(child.childNodes));
+          }
+        }
+      }
+    };
+    clean(tpl.content);
+    const wrap = document.createElement('div');
+    wrap.appendChild(tpl.content.cloneNode(true));
+    return wrap.innerHTML;
+  }
+  const richOf = (m) => sanitize(m.html != null ? m.html : esc(m.text));
+
+  function fillVars(text, c) {
+    const ct = c ? contactOf(c) : null;
+    return text
+      .replace(/\{\{name\}\}/g, ct ? firstName(ct) : 'there')
+      .replace(/\{\{agent\}\}/g, firstName(me()));
+  }
+  function cannedMatches() {
+    if (state.cannedQ == null) return [];
+    const q = state.cannedQ.toLowerCase();
+    return CANNED
+      .filter((r) => r.scope === 'global' || r.owner === state.me)
+      .filter((r) => !q || r.shortcut.includes(q) || r.title.toLowerCase().includes(q))
+      .slice(0, 6);
+  }
+
+  function botReply(c, text) {
+    const t = text.toLowerCase();
+    const v = contactOf(c).vertical;
+    const say = (txt, buttons) => M('bot', 'text', { text: txt, buttons });
+    if (/human|agent|person|someone/.test(t)) return { handoff: true, messages: [say('Of course. I am connecting you with a specialist now. Average wait is under two minutes.')] };
+    if (v === 'bfsi') {
+      if (/refund|dispute|chargeback|reverse/.test(t)) return { messages: [say('Understood. I have prepared the details for a specialist to check before anything is changed.')], draft: { text: 'I have opened a dispute for your recent card charge. A specialist will confirm the details within 2 business days.', buttons: ['Track dispute', 'Talk to a human'], reason: 'Financial action needs human approval', confidence: 0.64 } };
+      if (/balance|statement/.test(t)) return { messages: [say('Your available balance is €2,418.55. Would you like a statement?', ['Last 5 transactions', 'Download statement', 'Talk to a human'])] };
+      if (/block|lock|stolen|lost/.test(t)) return { messages: [say('For your security I can block the card ending 4417 right away. Shall I go ahead?', ['Yes, block it', 'Cancel'])] };
+      return { messages: [say('I can help with balances, card blocks and disputes. What do you need?', ['Check balance', 'Block my card', 'Dispute a charge'])] };
+    }
+    if (v === 'ecommerce') {
+      if (/order|track|deliver|parcel/.test(t)) return { messages: [M('bot', 'carousel', { text: 'Here are your three most recent orders.', items: ORDERS })] };
+      if (/linen|vase|tote/.test(t)) return { messages: [say('Return started. Your prepaid label is on its way to your email, and the refund follows within 3 days of delivery.')] };
+      if (/return|refund/.test(t)) return { messages: [say('Returns are free within 30 days. Which item would you like to send back?', ['Linen throw', 'Ceramic vase', 'Talk to a human'])] };
+      return { messages: [say('I can track orders, start returns or answer product questions.', ['Track an order', 'Start a return', 'Talk to a human'])] };
+    }
+    if (/\d{1,2}:\d{2}/.test(t)) return { messages: [say('Booked. A calendar invite is on its way to your inbox.')] };
+    if (/book|appoint|slot|call/.test(t)) return { messages: [say('Great. Which slot works best for a 20-minute call?', ['Thu 10:00', 'Thu 14:30', 'Thu 16:00'])] };
+    return { messages: [say('Happy to help. Would you like to book a call or see pricing?', ['Book a call', 'Pricing', 'Talk to a human'])] };
+  }
+
+  function visitorSend(c, text) {
+    c.messages.push(M('customer', 'text', { text }));
+    state.scrollBottom = true;
+    if (c.mode !== 'bot') return;
+    state.typing = c.id;
+    setTimeout(() => {
+      state.typing = null;
+      const cc = convById(c.id);
+      if (cc && cc.mode === 'bot') {
+        const out = botReply(cc, text);
+        cc.messages.push(...out.messages);
+        if (out.draft) cc.pendingDraft = out.draft;
+        if (out.handoff) { cc.mode = 'human'; sys(cc, 'Handed to a human agent · next in queue'); }
+        state.scrollBottom = true;
+      }
+      render();
+    }, 900);
+  }
+
+  function startBreak(type) {
+    const u = me();
+    const pol = BREAK_POLICY[type];
+    if (u.used[type] >= pol.max) { toast(`No ${pol.label.toLowerCase()} left today`); return; }
+    u.used[type] += 1;
+    u.status = 'break';
+    u.breakType = type;
+    u.breakEnd = Date.now() + pol.mins * 60000;
+    state.sheet = null;
+    toast(`${pol.label} started · ${pol.mins} min`);
+  }
+  function endBreak(uid) {
+    const u = userById(uid);
+    if (!u || u.status !== 'break') return;
+    u.status = uid === state.me ? state.returnStatus : 'available';
+    u.breakEnd = null;
+    u.breakType = null;
+    toast(uid === state.me ? 'Welcome back. You are available.' : `${firstName(u)} is back from break`);
+  }
+  function setStatus(key) {
+    const u = me();
+    if (u.status === 'break') { toast('End your break first'); return; }
+    u.status = key;
+    if (key === 'available' || key === 'busy') state.returnStatus = key;
+    state.lastActive = Date.now();
+    toast(`You are ${STATUS[key].label.toLowerCase()}`);
+  }
+  function tickClock() {
+    let changed = false;
+    USERS.forEach((u) => {
+      if (u.status === 'break' && u.breakEnd && Date.now() >= u.breakEnd) {
+        u.status = u.id === state.me ? state.returnStatus : 'available';
+        u.breakEnd = null;
+        u.breakType = null;
+        changed = true;
+        if (u.id === state.me) toast('Break over. You are back online.');
+      }
+    });
+    const idleMins = (Date.now() - state.lastActive) / 60000;
+    if (state.autoAway && me().status === 'available' && idleMins >= state.autoAway) {
+      me().status = 'away';
+      changed = true;
+      toast('You were away for a while, so your status changed to Away.');
+    }
+    if (changed) render();
+    else updateCountdowns();
+  }
+  function updateCountdowns() {
+    document.querySelectorAll('[data-countdown]').forEach((el) => {
+      const u = userById(el.dataset.countdown);
+      if (u && u.breakEnd) el.textContent = fmtMs(u.breakEnd - Date.now());
+    });
+  }
+
+  let toastTimer = null;
+  function toast(msg, undo) {
+    state.toast = { msg, undo };
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { state.toast = null; render(); }, 4200);
+  }
+
+  function render() {
+    const ae = document.activeElement;
+    const focusKey = ae && ae.dataset ? ae.dataset.key : null;
+    const wasEditor = !!(ae && ae.hasAttribute && ae.hasAttribute('data-editor'));
+    const caret = focusKey && ae.selectionStart != null ? ae.selectionStart : null;
+    const prevContent = $('.content', root);
+    const prevMsgs = $('.msgs', root);
+    const sc = prevContent ? prevContent.scrollTop : 0;
+    const ms = prevMsgs ? prevMsgs.scrollTop : 0;
+
+    document.documentElement.dataset.theme = state.theme;
+    if (state.convId && !current()) state.convId = null;
+    root.innerHTML = shell();
+
+    const content = $('.content', root);
+    if (content) content.scrollTop = sc;
+    const msgs = $('.msgs', root);
+    if (msgs) msgs.scrollTop = state.scrollBottom ? msgs.scrollHeight : ms;
+    state.scrollBottom = false;
+
+    if (focusKey) {
+      const el = $(`[data-key="${focusKey}"]`, root);
+      if (el) {
+        el.focus({ preventScroll: true });
+        if (caret != null && el.setSelectionRange) { try { el.setSelectionRange(caret, caret); } catch (_) { } }
+      }
+    }
+    if (wasEditor) {
+      const ed = $('[data-editor]', root);
+      if (ed) focusEnd(ed);
+    }
+  }
+
+  function focusEnd(el) {
+    el.focus({ preventScroll: true });
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function shell() {
+    const c = current();
+    return `<div class="phone">
+      ${renderHome()}
+      ${renderTabbar()}
+      ${state.toast ? `<div class="toast" role="status"><span>${esc(state.toast.msg)}</span>${state.toast.undo ? '<button data-act="undo">Undo</button>' : ''}</div>` : ''}
+    </div>`;
+  }
+
+  const roleSeg = () => `<div class="seg mini" role="group" aria-label="View as">${['admin', 'agent'].map((r) => `<button class="${me().role === r ? 'on' : ''}" data-act="role" data-role="${r}" aria-pressed="${me().role === r}">${r === 'admin' ? 'Admin' : 'Agent'}</button>`).join('')}</div>`;
+  const topbar = (title, sub, right = '') => `<header class="topbar"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="tb-right">${right}</div></header>`;
+
+  function renderTabbar() {
+    const unread = CONVS.filter((c) => c.status === 'open' && c.unread).length;
+    const tabs = [
+      ['home', 'Home', 'home', 0],
+      ['inbox', 'Inbox', 'inbox', unread],
+      ['settings', 'Settings', 'settings', 0],
+    ];
+    return `<nav class="tabbar" aria-label="Main">${tabs.map(([k, l, i, b]) => `<button class="tab ${state.tab === k ? 'on' : ''}" data-act="tab" data-tab="${k}" ${state.tab === k ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${b ? `<span class="badge" aria-label="${b} unread">${b}</span>` : ''}</button>`).join('')}</nav>`;
+  }
+
+  function statusSeg() {
+    const keys = ['available', 'busy', 'away', 'offline'];
+    return `<div class="status-seg">${keys.map((k) => `<button class="${me().status === k ? 'on' : ''}" data-act="set-status" data-s="${k}" style="--s:${STATUS[k].color}" aria-pressed="${me().status === k}"><i></i>${STATUS[k].label}</button>`).join('')}</div>`;
+  }
+
+  function renderHome() {
+    const u = me();
+    const mine = CONVS.filter((c) => c.status === 'open' && c.assignee === u.id);
+    const waiting = CONVS.filter((c) => c.status === 'open' && !c.assignee).length;
+    const slaRisk = CONVS.filter((c) => c.status === 'open' && (c.priority === 'urgent' || c.priority === 'high') && (c.assignee === u.id || !c.assignee));
+
+    return `${topbar(`Hi, ${firstName(u)}`, `${mine.length} chats assigned · ${waiting} waiting`, roleSeg())}
+      <div class="content">
+        <div class="card">${statusSeg()}</div>
+        <div class="kpis">
+          <div class="kpi"><span>Assigned to you</span><b>${mine.length}</b></div>
+          <div class="kpi ${slaRisk.length ? 'alert' : ''}"><span>SLA at risk</span><b>${slaRisk.length}</b></div>
+        </div>
+        <p class="label">Needs you next</p>
+        <div class="list">${visibleConvs().slice(0, 3).map(convCard).join('') || '<div class="empty"><p>All caught up!</p></div>'}</div>
+      </div>`;
+  }
+
+  function convCard(c) {
+    const ct = contactOf(c);
+    const last = lastMsg(c);
+    return `<article class="conv" data-act="conv" data-id="${c.id}" tabindex="0">
+      ${av(ct, '', c.channel)}
+      <div class="conv-body">
+        <div class="row1"><b>${esc(ct.name)}</b><time>${rel(last.time)}</time></div>
+        <p class="prev"><span>${esc(preview(last)).slice(0, 60)}</span></p>
+      </div>
+      ${c.unread ? `<span class="badge">${c.unread}</span>` : ''}
+    </article>`;
+  }
+
+  function renderSettings() {
+    const u = me();
+    return `${topbar('Settings', `${esc(u.name)} · ${u.role === 'admin' ? 'Admin' : 'Agent'}`)}
+      <div class="content">
+        <div class="group">
+          ${['light', 'dark'].map((t) => `<button class="setrow" data-act="theme" data-t="${t}" style="cursor:pointer"><span><b>${t === 'light' ? '☀️ Light' : '🌙 Dark'}</b></span>${state.theme === t ? ic('check') : ''}</button>`).join('')}
+        </div>
+        <p class="label">Preferences</p>
+        <div class="group">
+          <div class="setrow"><span><b>Auto-away</b><small>After ${state.autoAway || 'never'} min idle</small></span></div>
+          <div class="rule"><div><b>Status after break</b></div>
+            <select class="select" data-act="returnstatus" style="width:120px">${['available', 'busy'].map((k) => `<option value="${k}" ${state.returnStatus === k ? 'selected' : ''}>${STATUS[k].label}</option>`).join('')}</select></div>
+        </div>
+      </div>`;
+  }
+
+  function render() {
+    const ae = document.activeElement;
+    const focusKey = ae && ae.dataset ? ae.dataset.key : null;
+    const prevContent = $('.content', root);
+    const sc = prevContent ? prevContent.scrollTop : 0;
+
+    document.documentElement.dataset.theme = state.theme;
+    root.innerHTML = shell();
+
+    const content = $('.content', root);
+    if (content) content.scrollTop = sc;
+  }
+
+  // Event listeners
+  root.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el || el.disabled) return;
+    const d = el.dataset;
+    state.lastActive = Date.now();
+    switch (d.act) {
+      case 'tab': state.tab = d.tab; break;
+      case 'role': state.me = d.role === 'admin' ? 'u-ayo' : 'u-sara'; toast(`Viewing as ${me().name}`); break;
+      case 'conv': openConv(d.id); break;
+      case 'set-status': setStatus(d.s); break;
+      case 'theme': state.theme = d.t; saveTheme(d.t); break;
+      case 'returnstatus': state.returnStatus = el.value; break;
+    }
+    render();
+  });
+
+  root.addEventListener('change', (e) => {
+    if (e.target.dataset.act === 'returnstatus') state.returnStatus = e.target.value;
+    render();
+  });
+
+  function openConv(id) {
+    state.convId = id;
+    const c = convById(id);
+    c.unread = 0;
+    state.draftHtml = '';
+    render();
+  }
+
+  setInterval(tickClock, 1000);
+  render();
+})();
+  </script>
+</body>
+</html>
